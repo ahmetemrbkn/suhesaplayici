@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Su Takip Uygulaması</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: Arial, sans-serif;
+      color: white;
+      background: black;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(1px 1px at 20% 30%, white, transparent),
+        radial-gradient(1px 1px at 80% 40%, white, transparent),
+        radial-gradient(1px 1px at 60% 70%, white, transparent),
+        radial-gradient(1px 1px at 30% 80%, white, transparent),
+        radial-gradient(1px 1px at 50% 20%, white, transparent);
+      background-size: 200px 200px;
+      opacity: 0.8;
+    }
+
+    .card {
+      position: relative;
+      background: rgba(0, 0, 0, 0.75);
+      padding: 24px;
+      border-radius: 18px;
+      width: 340px;
+      box-shadow: 0 0 20px rgba(255,255,255,0.15);
+      z-index: 1;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 20px;
+      margin-bottom: 16px;
+    }
+
+    label {
+      font-size: 14px;
+      margin-top: 10px;
+      display: block;
+    }
+
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 6px;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 14px;
+      padding: 10px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      font-size: 15px;
+      background: #1e90ff;
+      color: white;
+    }
+
+    .secondary {
+      background: #2ecc71;
+    }
+
+    .result {
+      margin-top: 14px;
+      text-align: center;
+      font-size: 14px;
+      white-space: pre-line;
+    }
+
+    .progress-box {
+      margin-top: 16px;
+    }
+
+    .progress {
+      width: 100%;
+      height: 14px;
+      background: #333;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #1e90ff, #00ffff);
+      transition: width 0.4s ease;
+    }
+
+    .progress-text {
+      text-align: center;
+      margin-top: 6px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <h1>💧 Su Takip Uygulaması</h1>
+
+    <label>Günde kaç litre su?</label>
+    <input type="number" id="litre" placeholder="Örn: 3" />
+
+    <label>Kaç saat içinde?</label>
+    <input type="number" id="saat" placeholder="Örn: 12" />
+
+    <label>1 bardak kaç ml?</label>
+    <input type="number" id="bardakMl" placeholder="Örn: 200" />
+
+    <button onclick="hesapla()">Hesapla</button>
+    <button class="secondary" onclick="bardakIctim()">1 Bardak İçtim</button>
+
+    <div class="result" id="sonuc"></div>
+
+    <div class="progress-box">
+      <div class="progress">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-text" id="progressText">0%</div>
+    </div>
+  </div>
+
+  <script>
+    let hedefMl = 0;
+    let icilenMl = 0;
+    let bardakMlGlobal = 0;
+    let hatirlatmaInterval;
+
+    function hesapla() {
+      const litre = Number(document.getElementById('litre').value);
+      const saat = Number(document.getElementById('saat').value);
+      const bardakMl = Number(document.getElementById('bardakMl').value);
+
+      if (!litre || !saat || !bardakMl) {
+        document.getElementById('sonuc').innerText =
+          'Lütfen tüm alanları doldur.';
+        return;
+      }
+
+      hedefMl = litre * 1000;
+      bardakMlGlobal = bardakMl;
+      icilenMl = 0;
+      guncelleProgress();
+
+      const bardakSayisi = hedefMl / bardakMl;
+      const saatlikBardak = bardakSayisi / saat;
+
+      document.getElementById('sonuc').innerText =
+        `${saat} saat içinde ${litre} litre su için:
+Toplam ${bardakSayisi.toFixed(1)} bardak
+Saatte ~${saatlikBardak.toFixed(2)} bardak`;
+
+      if ("Notification" in window && Notification.permission !== 'granted') {
+        Notification.requestPermission();
+      }
+
+      clearInterval(hatirlatmaInterval);
+      hatirlatmaInterval = setInterval(() => {
+        if (Notification.permission === 'granted') {
+          new Notification('💧 Su İçme Zamanı', {
+            body: 'Bir bardak su içmeyi unutma kanka!'
+          });
+        }
+      }, 60 * 60 * 1000);
+    }
+
+    function bardakIctim() {
+      if (!hedefMl) return;
+
+      icilenMl += bardakMlGlobal;
+      if (icilenMl > hedefMl) icilenMl = hedefMl;
+      guncelleProgress();
+    }
+
+    function guncelleProgress() {
+      const yuzde = (icilenMl / hedefMl) * 100 || 0;
+      document.getElementById('progressFill').style.width = yuzde + '%';
+      document.getElementById('progressText').innerText =
+        `${Math.round(yuzde)}% tamamlandı`;
+    }
+  </script>
+</body>
+</html>
